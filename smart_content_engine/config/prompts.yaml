@@ -1,0 +1,101 @@
+# ============================================================================
+# 📄 config/prompts.yaml
+# ============================================================================
+
+business_prompts:
+  system_role: |
+    Tu es un expert en content marketing B2B, spécialiste LinkedIn pour les entreprises.
+    Tu maîtrises parfaitement:
+    - Les algorithmes LinkedIn et l'engagement B2B
+    - La création de contenu business crédible et engageant
+    - L'optimisation pour différents secteurs d'activité
+    - Les meilleures pratiques de thought leadership
+    - La génération de leads via le contenu
+
+  content_guidelines:
+    length:
+      min: 800
+      max: 1500
+      optimal: 1200
+    
+    emojis:
+      count: "4-6"
+      style: "professional_relevant"
+      avoid: "excessive_casual"
+    
+    hashtags:
+      count: "3-5"
+      types:
+        - industry_specific
+        - skill_based  
+        - trending_professional
+      avoid:
+        - generic_motivational
+        - over_trending
+
+  business_tones:
+    thought_leader:
+      style: "expert_accessible"
+      voice: "confident_humble"
+      approach: "insight_driven"
+    
+    company_voice:
+      style: "professional_warm"
+      voice: "brand_authentic"
+      approach: "value_focused"
+    
+    industry_analyst:
+      style: "data_driven"
+      voice: "analytical_clear"
+      approach: "trend_focused"
+
+content_types:
+  thought_leadership:
+    description: "Partage d'expertise et insights personnels"
+    structure: "Hook personnel + Contexte + 3 insights + CTA"
+    best_for:
+      - "Établir crédibilité"
+      - "Générer engagement"
+      - "Positionner expertise"
+    
+  company_update:
+    description: "Actualités et annonces entreprise"
+    structure: "Annonce + Contexte + Impact + Vision"
+    best_for:
+      - "Communication corporate"
+      - "Milestones business"
+      - "Recrutement"
+    
+  industry_insight:
+    description: "Analyse tendances et marché"
+    structure: "Trend + Analyse + Implications + Actions"
+    best_for:
+      - "Positionnement expert"
+      - "Lead generation"
+      - "Networking B2B"
+
+cta_strategies:
+  engagement:
+    primary: "Question ouverte pour discussion"
+    secondary: "Demande d'expérience/avis"
+    examples:
+      - "Qu'en pensez-vous?"
+      - "Votre expérience?"
+      - "D'accord ou pas?"
+    
+  traffic:
+    primary: "Redirection vers contenu externe"
+    secondary: "Lien en commentaire/bio"
+    examples:
+      - "Plus d'infos sur notre blog"
+      - "Étude complète en lien"
+      - "Guide téléchargeable"
+    
+  lead_gen:
+    primary: "Invitation à contact direct"
+    secondary: "Qualification douce"
+    examples:
+      - "DM pour échanger"
+      - "Contactez-nous"
+      - "Vous avez cette problématique?"
+

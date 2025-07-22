@@ -1,0 +1,44 @@
+# ============================================================================
+# 📄 config/apis.yaml
+# ============================================================================
+
+apis:
+  google:
+    name: "Google Generative AI"
+    base_url: "https://generativelanguage.googleapis.com"
+    model: "gemini-1.5-flash"
+    required: true
+    cost: "free"
+    
+  linkedin:
+    name: "LinkedIn API"
+    base_url: "https://api.linkedin.com/v2"
+    version: "202308"
+    required: false
+    cost: "free"
+    scopes:
+      - "r_liteprofile"
+      - "r_emailaddress"
+      - "w_member_social"
+    
+  rapidapi:
+    name: "RapidAPI Hub"
+    base_url: "https://rapidapi.com"
+    required: false
+    cost: "freemium"
+    services:
+      - "Google Trends API"
+      - "News API"
+      - "Social Media APIs"
+
+rate_limits:
+  google_gemini:
+    requests_per_minute: 15
+    tokens_per_day: 1000000
+    
+  linkedin_api:
+    posts_per_day: 100
+    api_calls_per_day: 500
+    
+  rapidapi:
+    requests_per_day: 1000

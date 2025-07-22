@@ -1,0 +1,23 @@
+# --- Environnement virtuel ---
+venv/
+
+# --- Fichiers temporaires Python ---
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# --- Jetons et fichiers sensibles ---
+.env
+linkedin_token.json
+
+# --- Données locales ou temporaires ---
+data/
+
+# --- Fichiers systèmes ou IDE ---
+.DS_Store
+*.log
+*.swp
+*.swo
+.vscode/
+.idea/

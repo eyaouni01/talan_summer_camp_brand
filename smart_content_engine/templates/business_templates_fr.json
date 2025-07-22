@@ -1,0 +1,95 @@
+
+{
+  "thought_leadership": {
+    "hooks": [
+      "💡 Après {X} années en tant que {role} dans {industry}, voici ce que j'ai appris sur {topic}",
+      "🎯 3 erreurs que font 90% des {audience} en {domain} (et comment les éviter)",
+      "📈 Pourquoi {trend} va complètement transformer {industry} en 2024",
+      "🔍 Les données ne mentent pas : voici la réalité sur {topic} dans {industry}",
+      "⚡ Opinion impopulaire : {controversial_view} dans {industry}",
+      "📊 J'ai analysé {number} {data_type} et voici ce que j'ai découvert"
+    ],
+    "structures": [
+      "Hook personnel + Contexte d'expertise + 3 insights clés + Question engagement",
+      "Statistique surprenante + Analyse personnelle + Solutions concrètes + CTA action",
+      "Opinion contrarian + Arguments solides + Implications business + Discussion",
+      "Retour d'expérience + Leçons apprises + Conseils pratiques + Partage d'expérience"
+    ],
+    "cta": {
+      "engagement": [
+        "Qu'en pensez-vous ? Avez-vous observé la même chose dans votre secteur ?",
+        "Votre expérience rejoint-elle ces constats ? Partagez en commentaire.",
+        "D'accord ou pas d'accord ? Argumentez votre position."
+      ],
+      "traffic": [
+        "J'ai détaillé cette analyse dans un article complet (lien en commentaire).",
+        "Guide complet téléchargeable sur notre site (lien en bio).",
+        "Étude de cas complète disponible sur notre blog."
+      ],
+      "lead_gen": [
+        "Vous vivez cette problématique ? Envoyez-moi un DM, échangeons.",
+        "Besoin d'aide sur ce sujet ? Contactons-nous pour en discuter.",
+        "Cette situation vous parle ? Prenons un café virtuel."
+      ],
+      "networking": [
+        "Mentionnez quelqu'un de votre réseau qui devrait voir ça.",
+        "Taguez un collègue concerné par cette problématique.",
+        "Qui dans votre réseau travaille sur ce sujet ?"
+      ]
+    }
+  },
+  "company_update": {
+    "hooks": [
+      "🚀 Aujourd'hui marque une étape importante pour {company} et notre mission",
+      "📢 Annonce officielle : {company} franchit un nouveau cap avec {initiative}",
+      "🎉 Fiers d'annoncer que {company} vient de {achievement}",
+      "🌟 Nouvelle étape franchie chez {company} : {milestone}",
+      "🏆 {company} vient de remporter {award} et voici pourquoi c'est important"
+    ],
+    "structures": [
+      "Annonce + Contexte/Pourquoi + Impact client/marché + Vision future",
+      "Achievement + Story behind + Leçons apprises + Remerciements équipe",
+      "Nouveau produit/service + Problème résolu + Bénéfices clients + Disponibilité",
+      "Milestone + Journey + Défis surmontés + Prochaines étapes"
+    ]
+  },
+  "industry_insight": {
+    "hooks": [
+      "📊 Les derniers chiffres de {industry} révèlent une tendance que peu voient venir",
+      "🔮 Prédiction : voici ce qui va définir {industry} dans les 12 prochains mois",
+      "💭 Opinion impopulaire sur {industry} : {controversial_view}",
+      "⚠️ Signal faible que tout le monde ignore dans {industry} : {signal}",
+      "🎯 {industry} à un tournant : voici les 3 scénarios possibles"
+    ],
+    "structures": [
+      "Tendance observée + Données/preuves + Implications + Actions recommandées",
+      "Analyse macro + Impact micro + Opportunités + Mise en garde",
+      "Comparative analysis + Key differentiators + Market implications + Strategic advice",
+      "Signal faible + Analyse + Conséquences + Préparation"
+    ]
+  },
+  "product_showcase": {
+    "hooks": [
+      "🔧 Comment {product} résout enfin le problème que {audience} rencontre depuis des années",
+      "💡 L'idée derrière {product} : transformer {pain_point} en {solution}",
+      "📈 Résultats clients : {metric} d'amélioration avec {product}",
+      "🎯 {product} n'est pas juste un outil, c'est une nouvelle façon de {action}"
+    ]
+  },
+  "team_culture": {
+    "hooks": [
+      "👥 Pourquoi notre équipe de {number} personnes performe mieux que des équipes 10x plus grandes",
+      "🏢 Culture d'entreprise : ce qui rend {company} différent des autres",
+      "⭐ Portrait de {name}, {role} chez {company} et expert en {domain}",
+      "🎯 Notre philosophie : {philosophy} et comment elle transforme nos résultats"
+    ]
+  },
+  "educational": {
+    "hooks": [
+      "📚 Guide pratique : {number} étapes pour maîtriser {skill} en {timeframe}",
+      "💡 Astuce méconnue pour {objective} que {percentage}% des {audience} ignorent",
+      "🔍 Décryptage : pourquoi {common_belief} est faux et comment faire mieux",
+      "⚡ Quick tip : {tip} qui peut transformer votre {area} en {timeframe}"
+    ]
+  }
+}

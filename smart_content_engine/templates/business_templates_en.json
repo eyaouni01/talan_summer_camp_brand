@@ -1,0 +1,94 @@
+{
+  "thought_leadership": {
+    "hooks": [
+      "💡 After {X} years as a {role} in {industry}, here's what I've learned about {topic}",
+      "🎯 3 mistakes 90% of {audience} make in {domain} (and how to avoid them)",
+      "📈 Why {trend} will completely transform {industry} in 2024",
+      "🔍 The data doesn't lie: here's the reality about {topic} in {industry}",
+      "⚡ Unpopular opinion: {controversial_view} in {industry}",
+      "📊 I analyzed {number} {data_type} and here's what I discovered"
+    ],
+    "structures": [
+      "Personal hook + Expertise context + 3 key insights + Engagement question",
+      "Surprising statistic + Personal analysis + Concrete solutions + Action CTA",
+      "Contrarian opinion + Solid arguments + Business implications + Discussion",
+      "Experience feedback + Lessons learned + Practical advice + Experience sharing"
+    ],
+    "cta": {
+      "engagement": [
+        "What do you think? Have you observed the same in your industry?",
+        "Does your experience align with these findings? Share in comments.",
+        "Agree or disagree? Make your case."
+      ],
+      "traffic": [
+        "I've detailed this analysis in a complete article (link in comments).",
+        "Complete downloadable guide on our website (link in bio).",
+        "Full case study available on our blog."
+      ],
+      "lead_gen": [
+        "Facing this challenge? Send me a DM, let's discuss.",
+        "Need help with this topic? Contact us to discuss.",
+        "Does this situation resonate? Let's have a virtual coffee."
+      ],
+      "networking": [
+        "Tag someone in your network who should see this.",
+        "Tag a colleague dealing with this challenge.",
+        "Who in your network is working on this topic?"
+      ]
+    }
+  },
+  "company_update": {
+    "hooks": [
+      "🚀 Today marks an important milestone for {company} and our mission",
+      "📢 Official announcement: {company} reaches a new level with {initiative}",
+      "🎉 Proud to announce that {company} just {achievement}",
+      "🌟 New milestone reached at {company}: {milestone}",
+      "🏆 {company} just won {award} and here's why it matters"
+    ],
+    "structures": [
+      "Announcement + Context/Why + Client/market impact + Future vision",
+      "Achievement + Story behind + Lessons learned + Team thanks",
+      "New product/service + Problem solved + Client benefits + Availability",
+      "Milestone + Journey + Challenges overcome + Next steps"
+    ]
+  },
+  "industry_insight": {
+    "hooks": [
+      "📊 The latest {industry} numbers reveal a trend few see coming",
+      "🔮 Prediction: here's what will define {industry} in the next 12 months",
+      "💭 Unpopular opinion about {industry}: {controversial_view}",
+      "⚠️ Weak signal everyone ignores in {industry}: {signal}",
+      "🎯 {industry} at a turning point: here are the 3 possible scenarios"
+    ],
+    "structures": [
+      "Observed trend + Data/evidence + Implications + Recommended actions",
+      "Macro analysis + Micro impact + Opportunities + Warning",
+      "Comparative analysis + Key differentiators + Market implications + Strategic advice",
+      "Weak signal + Analysis + Consequences + Preparation"
+    ]
+  },
+  "product_showcase": {
+    "hooks": [
+      "🔧 How {product} finally solves the problem {audience} has faced for years",
+      "💡 The idea behind {product}: transforming {pain_point} into {solution}",
+      "📈 Client results: {metric} improvement with {product}",
+      "🎯 {product} isn't just a tool, it's a new way to {action}"
+    ]
+  },
+  "team_culture": {
+    "hooks": [
+      "👥 Why our team of {number} people outperforms teams 10x larger",
+      "🏢 Company culture: what makes {company} different from others",
+      "⭐ Meet {name}, {role} at {company} and expert in {domain}",
+      "🎯 Our philosophy: {philosophy} and how it transforms our results"
+    ]
+  },
+  "educational": {
+    "hooks": [
+      "📚 Practical guide: {number} steps to master {skill} in {timeframe}",
+      "💡 Unknown tip for {objective} that {percentage}% of {audience} ignore",
+      "🔍 Debunked: why {common_belief} is wrong and how to do better",
+      "⚡ Quick tip: {tip} that can transform your {area} in {timeframe}"
+    ]
+  }
+}

@@ -17,6 +17,9 @@ from agents.trend_agent import TrendAgent
 from core.content_generator import ContentGenerator
 from linkedin_auth import LinkedInAuth
 
+from agents.agent_image_prompt import generate_image_prompt
+from core.image_generator import ImageGenerator
+
 # Chargement des variables d'environnement
 load_dotenv()
 
@@ -296,14 +299,26 @@ class SmartContentEngine:
             if not reviewed_content:
                 print("❌ Échec de la review du contenu")
                 return
-                
+            #*********************************************************************************    
             print(f"✅ Contenu reviewé avec succès!")
+            # Étape 1: Générer un prompt d’image à partir du contenu revu
+            print("\n🧠 Génération du prompt d'image depuis le contenu validé...")
+            prompt_image = generate_image_prompt(reviewed_content)
+            print(f"\n📌 Prompt généré : {prompt_image}")
+            #**********************************************************************************
+            # Étape 2: Générer l'image à l'aide de Stable Diffusion
+            print("\n🎨 Génération de l’image...")
+            image_generator = ImageGenerator()
+            image_generator.generate_image(prompt_image, output_path="assets/generated_image.png")
+            print("✅ Image enregistrée dans assets/generated_image.png")
             
             # Affichage du contenu final
             print(f"\n📋 CONTENU BUSINESS FINAL:")
             print("=" * 50)
             print(reviewed_content)
             print("=" * 50)
+
+            
             
             # Étape 5: Publication réelle sur LinkedIn
             if linkedin_token:

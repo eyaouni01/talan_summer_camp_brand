@@ -1,5 +1,5 @@
 # ============================================================================
-# 📄 main.py
+# 📄 main.py - Version adaptée avec support Facebook
 # ============================================================================
 import os
 import asyncio
@@ -16,6 +16,7 @@ from agents.trend_agent import TrendAgent
 # Import des modules core
 from core.content_generator import ContentGenerator
 from linkedin_auth import LinkedInAuth
+from facebook_auth import FacebookAuth  # Nouveau import Facebook
 
 from agents.agent_image_prompt import generate_image_prompt
 from core.image_generator import ImageGenerator
@@ -26,10 +27,12 @@ load_dotenv()
 class SmartContentEngine:
     """
     Moteur principal de génération et publication de contenu business
+    Support LinkedIn et Facebook
     """
     
     def __init__(self):
         self.linkedin_auth = LinkedInAuth()
+        self.facebook_auth = FacebookAuth()  # Ajout Facebook
         
         # Agents MCP
         self.content_agent = ContentAgent()
@@ -52,6 +55,26 @@ class SmartContentEngine:
         
         for directory in directories:
             os.makedirs(directory, exist_ok=True)
+    
+    async def get_platform_choice(self):
+        """Permet de choisir la plateforme de publication"""
+        print("🌐 Choix de la plateforme de publication")
+        print("=" * 40)
+        print("1. LinkedIn seulement")
+        print("2. Facebook seulement") 
+        print("3. LinkedIn + Facebook (publication croisée)")
+        
+        while True:
+            choice = input("\nChoisissez votre plateforme (1-3): ").strip()
+            if choice in ["1", "2", "3"]:
+                break
+            print("❌ Choix invalide. Choisissez 1, 2 ou 3.")
+        
+        return {
+            "1": {"linkedin": True, "facebook": False},
+            "2": {"linkedin": False, "facebook": True},
+            "3": {"linkedin": True, "facebook": True}
+        }[choice]
     
     async def get_business_info(self):
         """Collecte les informations business de l'utilisateur"""
@@ -99,14 +122,16 @@ class SmartContentEngine:
             "3": "executives",
             "4": "managers",
             "5": "consultants",
-            "6": "freelancers"
+            "6": "freelancers",
+            "7": "customers",      # Pour Facebook
+            "8": "community"       # Pour Facebook
         }
         
         for key, value in audiences.items():
             print(f"{key}. {value.title()}")
         
         while True:
-            audience_choice = input("\nChoisissez votre audience (1-6): ").strip()
+            audience_choice = input("\nChoisissez votre audience (1-8): ").strip()
             if audience_choice in audiences:
                 break
             print("❌ Choix invalide.")
@@ -143,8 +168,8 @@ class SmartContentEngine:
             "company_size": company_size
         }
     
-    async def get_content_preferences(self):
-        """Collecte les préférences de contenu"""
+    async def get_content_preferences(self, platforms):
+        """Collecte les préférences de contenu selon les plateformes choisies"""
         print("\n📝 Préférences de contenu")
         print("=" * 30)
         
@@ -161,16 +186,30 @@ class SmartContentEngine:
         
         language = "fr" if lang_choice == "1" else "en"
         
-        # Type de contenu business
+        # Type de contenu business adapté aux plateformes
         print(f"\n📈 Type de contenu:")
-        content_types = {
-            "1": "thought_leadership",
-            "2": "company_update",
-            "3": "industry_insight",
-            "4": "product_showcase",
-            "5": "team_culture",
-            "6": "educational"
-        }
+        if platforms["facebook"]:
+            # Ajout de types spécifiques Facebook
+            content_types = {
+                "1": "thought_leadership",
+                "2": "company_update",
+                "3": "industry_insight",
+                "4": "product_showcase",
+                "5": "team_culture",
+                "6": "educational",
+                "7": "promotional",      # Spécifique Facebook
+                "8": "community_event"  # Spécifique Facebook
+            }
+        else:
+            # Types LinkedIn classiques
+            content_types = {
+                "1": "thought_leadership",
+                "2": "company_update",
+                "3": "industry_insight",
+                "4": "product_showcase",
+                "5": "team_culture",
+                "6": "educational"
+            }
         
         descriptions = {
             "thought_leadership": "Leadership/Expertise",
@@ -178,15 +217,18 @@ class SmartContentEngine:
             "industry_insight": "Insights secteur",
             "product_showcase": "Produit/Service",
             "team_culture": "Équipe/Culture",
-            "educational": "Éducatif/Conseils"
+            "educational": "Éducatif/Conseils",
+            "promotional": "Promotionnel/Marketing",
+            "community_event": "Événement communauté"
         }
         
         for key, value in content_types.items():
             desc = descriptions.get(value, value.title())
             print(f"{key}. {desc}")
         
+        max_choice = len(content_types)
         while True:
-            content_choice = input("\nChoisissez le type (1-6): ").strip()
+            content_choice = input(f"\nChoisissez le type (1-{max_choice}): ").strip()
             if content_choice in content_types:
                 break
             print("❌ Choix invalide.")
@@ -203,10 +245,14 @@ class SmartContentEngine:
         print("3. Génération de leads")
         print("4. Networking professionnel")
         print("5. Éducation/Sensibilisation")
+        if platforms["facebook"]:
+            print("6. Ventes/Conversion")
+            print("7. Notoriété de marque")
         
+        max_cta = 7 if platforms["facebook"] else 5
         while True:
-            cta_choice = input("\nChoisissez l'objectif (1-5): ").strip()
-            if cta_choice in ["1", "2", "3", "4", "5"]:
+            cta_choice = input(f"\nChoisissez l'objectif (1-{max_cta}): ").strip()
+            if cta_choice in [str(i) for i in range(1, max_cta + 1)]:
                 break
             print("❌ Choix invalide.")
         
@@ -215,7 +261,9 @@ class SmartContentEngine:
             "2": "traffic",
             "3": "lead_gen",
             "4": "networking",
-            "5": "education"
+            "5": "education",
+            "6": "sales",
+            "7": "brand_awareness"
         }
         
         cta_type = cta_types[cta_choice]
@@ -252,30 +300,73 @@ class SmartContentEngine:
                     print("❌ Configuration LinkedIn échouée")
                     return None
             else:
-                print("⚠️ Mode simulation activé (pas de publication réelle)")
+                print("⚠️ Mode simulation LinkedIn activé")
                 return None
         else:
             print("✅ Token LinkedIn trouvé dans .env")
             return access_token
     
+    async def setup_facebook_auth(self):
+        """Configure l'authentification Facebook si nécessaire"""
+        access_token = os.getenv('FACEBOOK_ACCESS_TOKEN')
+        
+        if not access_token:
+            print("🔐 Configuration Facebook requise...")
+            
+            # Vérifier si un token est déjà sauvegardé
+            saved_token = self.facebook_auth.load_saved_token()
+            if saved_token:
+                print("✅ Token Facebook trouvé dans la sauvegarde")
+                return saved_token
+            
+            # Demander authentification
+            setup = input("📋 Voulez-vous configurer Facebook maintenant? (o/n): ").strip().lower()
+            
+            if setup in ['o', 'oui', 'y', 'yes']:
+                token = self.facebook_auth.authenticate()
+                if token:
+                    print("✅ Facebook configuré avec succès!")
+                    return token
+                else:
+                    print("❌ Configuration Facebook échouée")
+                    return None
+            else:
+                print("⚠️ Mode simulation Facebook activé")
+                return None
+        else:
+            print("✅ Token Facebook trouvé dans .env")
+            return access_token
+    
     async def run_pipeline(self):
-        """Exécute le pipeline complet de génération de contenu business"""
-        print("🚀 Smart Content Engine - Business Edition")
-        print("=" * 50)
+        """Exécute le pipeline complet de génération de contenu business multi-plateformes"""
+        print("🚀 Smart Content Engine - Multi-Platform Business Edition")
+        print("=" * 60)
         
         try:
-            # Étape 0: Configuration LinkedIn
-            linkedin_token = await self.setup_linkedin_auth()
+            # Étape 0: Choix des plateformes
+            platforms = await self.get_platform_choice()
+            
+            # Configuration authentification selon les plateformes choisies
+            linkedin_token = None
+            facebook_token = None
+            
+            if platforms["linkedin"]:
+                linkedin_token = await self.setup_linkedin_auth()
+            
+            if platforms["facebook"]:
+                facebook_token = await self.setup_facebook_auth()
             
             # Étape 1: Informations business
             business_info = await self.get_business_info()
             
             # Étape 2: Préférences contenu
-            content_preferences = await self.get_content_preferences()
+            content_preferences = await self.get_content_preferences(platforms)
             
             # Fusion des configurations
             preferences = {**business_info, **content_preferences}
             preferences['linkedin_token'] = linkedin_token
+            preferences['facebook_token'] = facebook_token
+            preferences['platforms'] = platforms
             
             print(f"\n📊 CONFIGURATION:")
             print(f"🏢 {preferences['company_name']} ({preferences['company_size']})")
@@ -283,8 +374,29 @@ class SmartContentEngine:
             print(f"🎯 {preferences['target_audience']}")
             print(f"📝 {preferences['content_type']} ({preferences['language']})")
             
-            # Étape 3: Génération du contenu business
+            # Afficher les plateformes sélectionnées
+            selected_platforms = []
+            if platforms["linkedin"]: selected_platforms.append("LinkedIn")
+            if platforms["facebook"]: selected_platforms.append("Facebook")
+            print(f"🌐 Plateformes: {' + '.join(selected_platforms)}")
+            
+            # Étape 3: Génération du contenu business (utilise l'architecture existante)
             print(f"\n📝 Génération du contenu business...")
+            
+            # Adapter les préférences pour le contenu multi-plateformes
+            if platforms["facebook"] and not platforms["linkedin"]:
+                # Facebook uniquement - adapter le style
+                preferences['platform_style'] = 'facebook'
+                preferences['content_style'] = 'conversational'
+            elif platforms["linkedin"] and platforms["facebook"]:
+                # Les deux - style hybride
+                preferences['platform_style'] = 'hybrid'
+                preferences['content_style'] = 'professional_friendly'
+            else:
+                # LinkedIn uniquement - style existant
+                preferences['platform_style'] = 'linkedin'
+                preferences['content_style'] = 'professional'
+            
             content = await self.content_agent.generate_business_content(preferences)
             
             if not content:
@@ -293,7 +405,7 @@ class SmartContentEngine:
             
             print(f"✅ Contenu généré avec succès!")
             
-            # Étape 4: Review du contenu
+            # Étape 4: Review du contenu (utilise l'architecture existante)
             print(f"\n🔍 Review du contenu business...")
             reviewed_content = await self.reviewer_agent.review_business_content(content, preferences)
             
@@ -306,21 +418,20 @@ class SmartContentEngine:
             # Étape 5: Génération du prompt d'image à partir du contenu revu
             print("🧠 Génération du prompt d'image depuis le contenu validé...")
             print(f"Contenu revu: {reviewed_content}")
-            prompt_image = generate_image_prompt(reviewed_content,preferences)
+            prompt_image = generate_image_prompt(reviewed_content, preferences)
             print(f"📌 Prompt généré : {prompt_image}")
             
             # Étape 6: Générer l'image à l'aide de Stable Diffusion
             print("\n🎨 Génération de l'image...")
             image_generator = ImageGenerator()
             
-            # CORRECTION: Définir le chemin de l'image avec timestamp pour éviter les conflits
+            # Définir le chemin de l'image avec timestamp pour éviter les conflits
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             image_path = f"assets/generated_image_{timestamp}.png"
             
             # Générer l'image
-            image_generator.generate_image(prompt_image, output_path=image_path,num_inference_steps=20,width=512,height=512)
-            # Plus rapide
-
+            image_generator.generate_image(prompt_image, output_path=image_path, num_inference_steps=20, width=512, height=512)
+            
             print(f"✅ Image enregistrée dans {image_path}")
             
             # Vérifier que l'image a bien été créée
@@ -337,20 +448,22 @@ class SmartContentEngine:
             print(reviewed_content)
             print("=" * 50)
             
-            # Étape 7: Publication réelle sur LinkedIn
-            if linkedin_token:
-                publish = input(f"\n📤 Publier sur LinkedIn maintenant? (o/n): ").strip().lower()
+            # Étape 7: Publication sur les plateformes sélectionnées
+            publications_reussies = []
+            
+            # Publication LinkedIn
+            if platforms["linkedin"] and linkedin_token:
+                publish_linkedin = input(f"\n📤 Publier sur LinkedIn maintenant? (o/n): ").strip().lower()
                 
-                if publish in ['o', 'oui', 'y', 'yes']:
+                if publish_linkedin in ['o', 'oui', 'y', 'yes']:
                     print("📤 Publication en cours sur LinkedIn...")
                     
-                    # CORRECTION: Passer le bon contenu (texte seulement) et le chemin de l'image
                     content_text = reviewed_content.get('content', reviewed_content) if isinstance(reviewed_content, dict) else reviewed_content
                     
                     result = await self.posting_agent.post_to_linkedin_real(
                         content_text, 
                         preferences, 
-                        image_path=image_path  # ← CORRECTION: Variable maintenant définie
+                        image_path=image_path
                     )
                     
                     if result:
@@ -358,15 +471,45 @@ class SmartContentEngine:
                         print(f"🔗 URL du post: {result.get('post_url', 'Non disponible')}")
                         if result.get('has_image'):
                             print("🖼️ Image incluse dans la publication")
-                        else:
-                            print("📝 Publication en mode texte seul")
+                        publications_reussies.append("LinkedIn")
                     else:
                         print("❌ Échec de la publication sur LinkedIn")
                 else:
-                    print("📁 Contenu sauvegardé localement")
+                    print("📁 Contenu LinkedIn sauvegardé localement")
+            
+            # Publication Facebook
+            if platforms["facebook"] and facebook_token:
+                publish_facebook = input(f"\n📤 Publier sur Facebook maintenant? (o/n): ").strip().lower()
+                
+                if publish_facebook in ['o', 'oui', 'y', 'yes']:
+                    print("📤 Publication en cours sur Facebook...")
+                    
+                    content_text = reviewed_content.get('content', reviewed_content) if isinstance(reviewed_content, dict) else reviewed_content
+                    
+                    # Utiliser la méthode Facebook du posting_agent
+                    result = await self.posting_agent.post_to_facebook_real(
+                        content_text, 
+                        preferences, 
+                        image_path=image_path
+                    )
+                    
+                    if result:
+                        print("✅ Contenu publié sur Facebook avec succès!")
+                        print(f"🔗 URL du post: {result.get('post_url', 'Non disponible')}")
+                        if result.get('has_image'):
+                            print("🖼️ Image incluse dans la publication")
+                        publications_reussies.append("Facebook")
+                    else:
+                        print("❌ Échec de la publication sur Facebook")
+                else:
+                    print("📁 Contenu Facebook sauvegardé localement")
+            
+            # Résumé final
+            if publications_reussies:
+                print(f"\n🎉 SUCCÈS! Contenu publié sur: {', '.join(publications_reussies)}")
             else:
-                print("⚠️ Publication ignorée (pas de token LinkedIn)")
-                # Sauvegarder quand même le contenu et l'image
+                print("\n📁 Contenu sauvegardé pour publication manuelle ultérieure")
+                # Sauvegarder le contenu avec les informations multi-plateformes
                 self._save_offline_content(reviewed_content, image_path, preferences)
                 
         except Exception as e:
@@ -384,6 +527,7 @@ class SmartContentEngine:
                 "content": content,
                 "image_path": image_path,
                 "preferences": preferences,
+                "platforms": preferences.get('platforms', {}),
                 "status": "ready_for_manual_posting"
             }
             
@@ -394,6 +538,12 @@ class SmartContentEngine:
             print(f"📁 Contenu sauvegardé pour publication manuelle: {filename}")
             if image_path and os.path.exists(image_path):
                 print(f"🖼️ Image disponible: {image_path}")
+            
+            # Afficher les plateformes pour lesquelles le contenu est prêt
+            platforms = preferences.get('platforms', {})
+            ready_platforms = [p for p, enabled in platforms.items() if enabled]
+            if ready_platforms:
+                print(f"🌐 Prêt pour: {', '.join(ready_platforms)}")
             
         except Exception as e:
             print(f"⚠️ Erreur sauvegarde offline: {e}")

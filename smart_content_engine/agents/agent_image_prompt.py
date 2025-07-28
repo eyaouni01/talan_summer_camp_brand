@@ -1,4 +1,5 @@
 import os
+import re
 from dotenv import load_dotenv
 import google.generativeai as genai
 
@@ -6,26 +7,46 @@ import google.generativeai as genai
 load_dotenv()
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
-def generate_image_prompt(reviewed_text: str) -> str:
-    """
-    Génère un prompt visuel à partir d’un contenu validé, inspiré pour une image de style LinkedIn.
-    Le prompt est formaté pour être compatible avec Stable Diffusion (max 77 tokens, neutre et corporate).
-    """
+def clean_prompt_tokens(prompt):
+    """Nettoie les prompts pour supprimer toute référence aux personnes ou éléments interdits."""
+    forbidden = ['person', 'people', 'man', 'woman', 'face', 'hands', 'character', 'silhouette', 'portrait']
+    for word in forbidden:
+        prompt = re.sub(rf'\b{word}\b', '', prompt, flags=re.IGNORECASE)
+    return re.sub(r'\s+', ' ', prompt).strip()
+
+def generate_image_prompt(reviewed_content: str,preferences=None) -> str:
+    print("📥 Reviewed content:", reviewed_content)
     model = genai.GenerativeModel("gemini-1.5-flash")
 
-    instruction = (
-        "Tu es un expert en création d'images professionnelles adaptées à LinkedIn. "
-        "Transforme le texte ci-dessous en un prompt court, clair et visuellement inspirant. "
-        "Objectif : créer une image de type corporate, moderne, sobre, crédible, sans éléments artistiques flous. "
-        "Décris les visuels clés : ambiance, couleurs dominantes, objets, posture, arrière-plan, style graphique. "
-        "Fais en sorte que le style de l’image soit adapté à un post LinkedIn (contexte business, innovation, tech ou communication). "
-        "N’utilise pas de balises, ni d’instructions techniques. Pas plus de 77 tokens."
-    )
+    instruction = f"""
+You are a prompt compressor. Based on the following text, generate a **very short and explicit visual image prompt** (max 15 words), in English, suitable for a professional LinkedIn image.
 
-    prompt = f"{instruction}\n\nTexte à transformer : {reviewed_text}"
+RULES:
+- Be direct, no storytelling, no adjectives, no colors.
+- NO people or references to humans or body parts.
+- Just describe the core visual concept to illustrate.
+- Avoid style, focus on WHAT to show.
+
+EXAMPLES:
+- "Comparison between MCP and A2A"
+- "Job offer for data analyst"
+- "Timeline of product development"
+- "LinkedIn dashboard with engagement KPIs"
+
+TEXT:
+{reviewed_content[:300]}...
+"""
 
     try:
-        response = model.generate_content(prompt)
-        return response.text.strip()
+        response = model.generate_content(instruction)
+        prompt = clean_prompt_tokens(response.text.strip())
+        words = prompt.split()
+        if len(words) > 15:
+            prompt = ' '.join(words[:15])
+
+        print(f"✅ Short visual prompt: {prompt}")
+        return prompt
+
     except Exception as e:
-        return f"[ERREUR] Impossible de générer le prompt : {e}"
+        print(f"⚠️ Prompt generation failed: {e}")
+        return "Business chart or concept diagram for LinkedIn post"

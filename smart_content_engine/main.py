@@ -46,7 +46,8 @@ class SmartContentEngine:
             "data/trends",
             "data/generated_content", 
             "data/reviewed_content",
-            "data/posted_content"
+            "data/posted_content",
+            "assets"  # Ajout du dossier assets
         ]
         
         for directory in directories:
@@ -299,48 +300,103 @@ class SmartContentEngine:
             if not reviewed_content:
                 print("❌ Échec de la review du contenu")
                 return
-            #*********************************************************************************    
+            
             print(f"✅ Contenu reviewé avec succès!")
-            # Étape 1: Générer un prompt d’image à partir du contenu revu
-            print("\n🧠 Génération du prompt d'image depuis le contenu validé...")
-            prompt_image = generate_image_prompt(reviewed_content)
-            print(f"\n📌 Prompt généré : {prompt_image}")
-            #**********************************************************************************
-            # Étape 2: Générer l'image à l'aide de Stable Diffusion
-            print("\n🎨 Génération de l’image...")
+            
+            # Étape 5: Génération du prompt d'image à partir du contenu revu
+            print("🧠 Génération du prompt d'image depuis le contenu validé...")
+            print(f"Contenu revu: {reviewed_content}")
+            prompt_image = generate_image_prompt(reviewed_content,preferences)
+            print(f"📌 Prompt généré : {prompt_image}")
+            
+            # Étape 6: Générer l'image à l'aide de Stable Diffusion
+            print("\n🎨 Génération de l'image...")
             image_generator = ImageGenerator()
-            image_generator.generate_image(prompt_image, output_path="assets/generated_image.png")
-            print("✅ Image enregistrée dans assets/generated_image.png")
+            
+            # CORRECTION: Définir le chemin de l'image avec timestamp pour éviter les conflits
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            image_path = f"assets/generated_image_{timestamp}.png"
+            
+            # Générer l'image
+            image_generator.generate_image(prompt_image, output_path=image_path,num_inference_steps=20,width=512,height=512)
+            # Plus rapide
+
+            print(f"✅ Image enregistrée dans {image_path}")
+            
+            # Vérifier que l'image a bien été créée
+            if os.path.exists(image_path):
+                print(f"🖼️ Image générée: {image_path}")
+                print(f"📁 Fichier existe: {os.path.exists(image_path)}")
+            else:
+                print(f"⚠️ Attention: Image non trouvée à {image_path}")
+                image_path = None  # Pas d'image si échec
             
             # Affichage du contenu final
             print(f"\n📋 CONTENU BUSINESS FINAL:")
             print("=" * 50)
             print(reviewed_content)
             print("=" * 50)
-
             
-            
-            # Étape 5: Publication réelle sur LinkedIn
+            # Étape 7: Publication réelle sur LinkedIn
             if linkedin_token:
                 publish = input(f"\n📤 Publier sur LinkedIn maintenant? (o/n): ").strip().lower()
                 
                 if publish in ['o', 'oui', 'y', 'yes']:
                     print("📤 Publication en cours sur LinkedIn...")
-                    result =  await self.posting_agent.post_to_linkedin_real(reviewed_content, preferences)
+                    
+                    # CORRECTION: Passer le bon contenu (texte seulement) et le chemin de l'image
+                    content_text = reviewed_content.get('content', reviewed_content) if isinstance(reviewed_content, dict) else reviewed_content
+                    
+                    result = await self.posting_agent.post_to_linkedin_real(
+                        content_text, 
+                        preferences, 
+                        image_path=image_path  # ← CORRECTION: Variable maintenant définie
+                    )
+                    
                     if result:
                         print("✅ Contenu publié sur LinkedIn avec succès!")
                         print(f"🔗 URL du post: {result.get('post_url', 'Non disponible')}")
+                        if result.get('has_image'):
+                            print("🖼️ Image incluse dans la publication")
+                        else:
+                            print("📝 Publication en mode texte seul")
                     else:
                         print("❌ Échec de la publication sur LinkedIn")
                 else:
                     print("📁 Contenu sauvegardé localement")
             else:
                 print("⚠️ Publication ignorée (pas de token LinkedIn)")
+                # Sauvegarder quand même le contenu et l'image
+                self._save_offline_content(reviewed_content, image_path, preferences)
                 
         except Exception as e:
             print(f"❌ Erreur dans le pipeline: {e}")
             import traceback
             traceback.print_exc()
+    
+    def _save_offline_content(self, content, image_path, preferences):
+        """Sauvegarde le contenu hors ligne pour utilisation ultérieure"""
+        try:
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            
+            offline_data = {
+                "timestamp": timestamp,
+                "content": content,
+                "image_path": image_path,
+                "preferences": preferences,
+                "status": "ready_for_manual_posting"
+            }
+            
+            filename = f"data/posted_content/offline_content_{timestamp}.json"
+            with open(filename, 'w', encoding='utf-8') as f:
+                json.dump(offline_data, f, ensure_ascii=False, indent=2)
+            
+            print(f"📁 Contenu sauvegardé pour publication manuelle: {filename}")
+            if image_path and os.path.exists(image_path):
+                print(f"🖼️ Image disponible: {image_path}")
+            
+        except Exception as e:
+            print(f"⚠️ Erreur sauvegarde offline: {e}")
 
 # Point d'entrée principal
 async def main():

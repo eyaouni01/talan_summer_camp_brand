@@ -1,10 +1,10 @@
 # ============================================================================
-# 📄 main.py - Version adaptée avec support Facebook
+# 📄 main.py - Version adaptée avec support Facebook + Publication Programmée
 # ============================================================================
 import os
 import asyncio
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 from dotenv import load_dotenv
 
 # Import des agents
@@ -16,10 +16,13 @@ from agents.trend_agent import TrendAgent
 # Import des modules core
 from core.content_generator import ContentGenerator
 from linkedin_auth import LinkedInAuth
-from facebook_auth import FacebookAuth  # Nouveau import Facebook
+from facebook_auth import FacebookAuth
 
 from agents.agent_image_prompt import generate_image_prompt
 from core.image_generator import ImageGenerator
+
+# Import du scheduler
+from scheduler import ContentScheduler
 
 # Chargement des variables d'environnement
 load_dotenv()
@@ -27,18 +30,21 @@ load_dotenv()
 class SmartContentEngine:
     """
     Moteur principal de génération et publication de contenu business
-    Support LinkedIn et Facebook
+    Support LinkedIn, Facebook et publication programmée
     """
     
     def __init__(self):
         self.linkedin_auth = LinkedInAuth()
-        self.facebook_auth = FacebookAuth()  # Ajout Facebook
+        self.facebook_auth = FacebookAuth()
         
         # Agents MCP
         self.content_agent = ContentAgent()
         self.reviewer_agent = ReviewerAgent()
         self.posting_agent = PostingAgent()
         self.trend_agent = TrendAgent()
+        
+        # Scheduler pour publication programmée
+        self.scheduler = ContentScheduler()
         
         # Création des dossiers nécessaires
         self._create_directories()
@@ -50,11 +56,75 @@ class SmartContentEngine:
             "data/generated_content", 
             "data/reviewed_content",
             "data/posted_content",
-            "assets"  # Ajout du dossier assets
+            "data/scheduled_posts",  # Nouveau: pour les posts programmés
+            "assets"
         ]
         
         for directory in directories:
             os.makedirs(directory, exist_ok=True)
+    
+    async def get_publication_mode(self):
+        """Choix entre publication immédiate ou programmée"""
+        print("\n📅 Mode de publication")
+        print("=" * 30)
+        print("1. Publication immédiate")
+        print("2. Publication programmée")
+        
+        while True:
+            choice = input("\nChoisissez le mode (1 ou 2): ").strip()
+            if choice in ["1", "2"]:
+                break
+            print("❌ Veuillez choisir 1 ou 2")
+        
+        return "immediate" if choice == "1" else "scheduled"
+    
+    async def get_schedule_datetime(self):
+        """Collecte la date/heure de publication programmée"""
+        print("\n⏰ Programmation de la publication")
+        print("=" * 35)
+        print("1. Dans 1 heure")
+        print("2. Dans 2 heures")
+        print("3. Dans 6 heures")
+        print("4. Demain à 9h00")
+        print("5. Demain à 14h00")
+        print("6. Date/heure personnalisée")
+        
+        while True:
+            choice = input("\nChoisissez l'option (1-6): ").strip()
+            
+            if choice == "1":
+                return datetime.now() + timedelta(hours=1)
+            elif choice == "2":
+                return datetime.now() + timedelta(hours=2)
+            elif choice == "3":
+                return datetime.now() + timedelta(hours=6)
+            elif choice == "4":
+                tomorrow = datetime.now() + timedelta(days=1)
+                return tomorrow.replace(hour=9, minute=0, second=0, microsecond=0)
+            elif choice == "5":
+                tomorrow = datetime.now() + timedelta(days=1)
+                return tomorrow.replace(hour=14, minute=0, second=0, microsecond=0)
+            elif choice == "6":
+                try:
+                    date_str = input("📅 Date (DD/MM/YYYY): ").strip()
+                    time_str = input("🕐 Heure (HH:MM): ").strip()
+                    
+                    # Parser la date et l'heure
+                    day, month, year = map(int, date_str.split('/'))
+                    hour, minute = map(int, time_str.split(':'))
+                    
+                    schedule_time = datetime(year, month, day, hour, minute)
+                    
+                    if schedule_time <= datetime.now():
+                        print("❌ La date doit être dans le futur")
+                        continue
+                    
+                    return schedule_time
+                except ValueError:
+                    print("❌ Format invalide. Utilisez DD/MM/YYYY et HH:MM")
+                    continue
+            else:
+                print("❌ Choix invalide")
     
     async def get_platform_choice(self):
         """Permet de choisir la plateforme de publication"""
@@ -337,13 +407,54 @@ class SmartContentEngine:
             print("✅ Token Facebook trouvé dans .env")
             return access_token
     
+    def _save_reviewed_content_for_scheduling(self, content, image_path, preferences):
+        """Sauvegarde le contenu reviewé pour la programmation"""
+        try:
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            absolute_image_path = None
+            if image_path:
+                absolute_image_path = os.path.abspath(image_path)
+                # Vérifier que l'image existe
+                if os.path.exists(absolute_image_path):
+                    print(f"🖼️ Image validée: {absolute_image_path}")
+                else:
+                    print(f"⚠️ Attention: Image non trouvée à {absolute_image_path}")
+                    absolute_image_path = None    
+                
+            # Sauvegarder dans reviewed_content avec format compatible scheduler
+            reviewed_data = {
+                "timestamp": timestamp,
+                "content": content,
+                "image_path": absolute_image_path,
+                "preferences": preferences,
+                "platforms": preferences.get('platforms', {}),
+                "status": "reviewed",
+                "type": "business"
+            }
+            
+            filename = f"data/reviewed_content/reviewed_{timestamp}.json"
+            with open(filename, 'w', encoding='utf-8') as f:
+                json.dump(reviewed_data, f, ensure_ascii=False, indent=2)
+            
+            print(f"📁 Contenu sauvegardé: {filename}")
+            if absolute_image_path:
+                print(f"🖼️ Image incluse: {os.path.basename(absolute_image_path)}")
+            return filename
+            
+        except Exception as e:
+            print(f"⚠️ Erreur sauvegarde: {e}")
+            return None
+    
     async def run_pipeline(self):
-        """Exécute le pipeline complet de génération de contenu business multi-plateformes"""
-        print("🚀 Smart Content Engine - Multi-Platform Business Edition")
-        print("=" * 60)
+        """Exécute le pipeline complet de génération de contenu business avec support publication programmée"""
+        print("🚀 Smart Content Engine - Multi-Platform Business Edition + Scheduler")
+        print("=" * 70)
         
         try:
-            # Étape 0: Choix des plateformes
+            # Étape 0: Mode de publication
+            publication_mode = await self.get_publication_mode()
+            
+            # Étape 1: Choix des plateformes
             platforms = await self.get_platform_choice()
             
             # Configuration authentification selon les plateformes choisies
@@ -356,10 +467,10 @@ class SmartContentEngine:
             if platforms["facebook"]:
                 facebook_token = await self.setup_facebook_auth()
             
-            # Étape 1: Informations business
+            # Étape 2: Informations business
             business_info = await self.get_business_info()
             
-            # Étape 2: Préférences contenu
+            # Étape 3: Préférences contenu
             content_preferences = await self.get_content_preferences(platforms)
             
             # Fusion des configurations
@@ -379,21 +490,19 @@ class SmartContentEngine:
             if platforms["linkedin"]: selected_platforms.append("LinkedIn")
             if platforms["facebook"]: selected_platforms.append("Facebook")
             print(f"🌐 Plateformes: {' + '.join(selected_platforms)}")
+            print(f"📅 Mode: {'Publication immédiate' if publication_mode == 'immediate' else 'Publication programmée'}")
             
-            # Étape 3: Génération du contenu business (utilise l'architecture existante)
+            # Étape 4: Génération du contenu business
             print(f"\n📝 Génération du contenu business...")
             
             # Adapter les préférences pour le contenu multi-plateformes
             if platforms["facebook"] and not platforms["linkedin"]:
-                # Facebook uniquement - adapter le style
                 preferences['platform_style'] = 'facebook'
                 preferences['content_style'] = 'conversational'
             elif platforms["linkedin"] and platforms["facebook"]:
-                # Les deux - style hybride
                 preferences['platform_style'] = 'hybrid'
                 preferences['content_style'] = 'professional_friendly'
             else:
-                # LinkedIn uniquement - style existant
                 preferences['platform_style'] = 'linkedin'
                 preferences['content_style'] = 'professional'
             
@@ -405,7 +514,7 @@ class SmartContentEngine:
             
             print(f"✅ Contenu généré avec succès!")
             
-            # Étape 4: Review du contenu (utilise l'architecture existante)
+            # Étape 5: Review du contenu
             print(f"\n🔍 Review du contenu business...")
             reviewed_content = await self.reviewer_agent.review_business_content(content, preferences)
             
@@ -415,21 +524,18 @@ class SmartContentEngine:
             
             print(f"✅ Contenu reviewé avec succès!")
             
-            # Étape 5: Génération du prompt d'image à partir du contenu revu
+            # Étape 6: Génération du prompt d'image
             print("🧠 Génération du prompt d'image depuis le contenu validé...")
-            print(f"Contenu revu: {reviewed_content}")
             prompt_image = generate_image_prompt(reviewed_content, preferences)
             print(f"📌 Prompt généré : {prompt_image}")
             
-            # Étape 6: Générer l'image à l'aide de Stable Diffusion
+            # Étape 7: Générer l'image
             print("\n🎨 Génération de l'image...")
             image_generator = ImageGenerator()
             
-            # Définir le chemin de l'image avec timestamp pour éviter les conflits
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             image_path = f"assets/generated_image_{timestamp}.png"
             
-            # Générer l'image
             image_generator.generate_image(prompt_image, output_path=image_path, num_inference_steps=20, width=512, height=512)
             
             print(f"✅ Image enregistrée dans {image_path}")
@@ -437,10 +543,9 @@ class SmartContentEngine:
             # Vérifier que l'image a bien été créée
             if os.path.exists(image_path):
                 print(f"🖼️ Image générée: {image_path}")
-                print(f"📁 Fichier existe: {os.path.exists(image_path)}")
             else:
                 print(f"⚠️ Attention: Image non trouvée à {image_path}")
-                image_path = None  # Pas d'image si échec
+                image_path = None
             
             # Affichage du contenu final
             print(f"\n📋 CONTENU BUSINESS FINAL:")
@@ -448,74 +553,137 @@ class SmartContentEngine:
             print(reviewed_content)
             print("=" * 50)
             
-            # Étape 7: Publication sur les plateformes sélectionnées
-            publications_reussies = []
-            
-            # Publication LinkedIn
-            if platforms["linkedin"] and linkedin_token:
-                publish_linkedin = input(f"\n📤 Publier sur LinkedIn maintenant? (o/n): ").strip().lower()
-                
-                if publish_linkedin in ['o', 'oui', 'y', 'yes']:
-                    print("📤 Publication en cours sur LinkedIn...")
-                    
-                    content_text = reviewed_content.get('content', reviewed_content) if isinstance(reviewed_content, dict) else reviewed_content
-                    
-                    result = await self.posting_agent.post_to_linkedin_real(
-                        content_text, 
-                        preferences, 
-                        image_path=image_path
-                    )
-                    
-                    if result:
-                        print("✅ Contenu publié sur LinkedIn avec succès!")
-                        print(f"🔗 URL du post: {result.get('post_url', 'Non disponible')}")
-                        if result.get('has_image'):
-                            print("🖼️ Image incluse dans la publication")
-                        publications_reussies.append("LinkedIn")
-                    else:
-                        print("❌ Échec de la publication sur LinkedIn")
-                else:
-                    print("📁 Contenu LinkedIn sauvegardé localement")
-            
-            # Publication Facebook
-            if platforms["facebook"] and facebook_token:
-                publish_facebook = input(f"\n📤 Publier sur Facebook maintenant? (o/n): ").strip().lower()
-                
-                if publish_facebook in ['o', 'oui', 'y', 'yes']:
-                    print("📤 Publication en cours sur Facebook...")
-                    
-                    content_text = reviewed_content.get('content', reviewed_content) if isinstance(reviewed_content, dict) else reviewed_content
-                    
-                    # Utiliser la méthode Facebook du posting_agent
-                    result = await self.posting_agent.post_to_facebook_real(
-                        content_text, 
-                        preferences, 
-                        image_path=image_path
-                    )
-                    
-                    if result:
-                        print("✅ Contenu publié sur Facebook avec succès!")
-                        print(f"🔗 URL du post: {result.get('post_url', 'Non disponible')}")
-                        if result.get('has_image'):
-                            print("🖼️ Image incluse dans la publication")
-                        publications_reussies.append("Facebook")
-                    else:
-                        print("❌ Échec de la publication sur Facebook")
-                else:
-                    print("📁 Contenu Facebook sauvegardé localement")
-            
-            # Résumé final
-            if publications_reussies:
-                print(f"\n🎉 SUCCÈS! Contenu publié sur: {', '.join(publications_reussies)}")
+            # Étape 8: Publication selon le mode choisi
+            if publication_mode == "immediate":
+                # Publication immédiate (code existant)
+                await self._handle_immediate_publication(reviewed_content, image_path, preferences, platforms, linkedin_token, facebook_token)
             else:
-                print("\n📁 Contenu sauvegardé pour publication manuelle ultérieure")
-                # Sauvegarder le contenu avec les informations multi-plateformes
-                self._save_offline_content(reviewed_content, image_path, preferences)
+                # Publication programmée (nouveau)
+                await self._handle_scheduled_publication(reviewed_content, image_path, preferences, platforms)
                 
         except Exception as e:
             print(f"❌ Erreur dans le pipeline: {e}")
             import traceback
             traceback.print_exc()
+    
+    async def _handle_immediate_publication(self, reviewed_content, image_path, preferences, platforms, linkedin_token, facebook_token):
+        """Gère la publication immédiate (code existant)"""
+        publications_reussies = []
+        
+        # Publication LinkedIn
+        if platforms["linkedin"] and linkedin_token:
+            publish_linkedin = input(f"\n📤 Publier sur LinkedIn maintenant? (o/n): ").strip().lower()
+            
+            if publish_linkedin in ['o', 'oui', 'y', 'yes']:
+                print("📤 Publication en cours sur LinkedIn...")
+                
+                content_text = reviewed_content.get('content', reviewed_content) if isinstance(reviewed_content, dict) else reviewed_content
+                
+                result = await self.posting_agent.post_to_linkedin_real(
+                    content_text, 
+                    preferences, 
+                    image_path=image_path
+                )
+                
+                if result:
+                    print("✅ Contenu publié sur LinkedIn avec succès!")
+                    print(f"🔗 URL du post: {result.get('post_url', 'Non disponible')}")
+                    if result.get('has_image'):
+                        print("🖼️ Image incluse dans la publication")
+                    publications_reussies.append("LinkedIn")
+                else:
+                    print("❌ Échec de la publication sur LinkedIn")
+            else:
+                print("📁 Contenu LinkedIn sauvegardé localement")
+        
+        # Publication Facebook
+        if platforms["facebook"] and facebook_token:
+            publish_facebook = input(f"\n📤 Publier sur Facebook maintenant? (o/n): ").strip().lower()
+            
+            if publish_facebook in ['o', 'oui', 'y', 'yes']:
+                print("📤 Publication en cours sur Facebook...")
+                
+                content_text = reviewed_content.get('content', reviewed_content) if isinstance(reviewed_content, dict) else reviewed_content
+                
+                result = await self.posting_agent.post_to_facebook_real(
+                    content_text, 
+                    preferences, 
+                    image_path=image_path
+                )
+                
+                if result:
+                    print("✅ Contenu publié sur Facebook avec succès!")
+                    print(f"🔗 URL du post: {result.get('post_url', 'Non disponible')}")
+                    if result.get('has_image'):
+                        print("🖼️ Image incluse dans la publication")
+                    publications_reussies.append("Facebook")
+                else:
+                    print("❌ Échec de la publication sur Facebook")
+            else:
+                print("📁 Contenu Facebook sauvegardé localement")
+        
+        # Résumé final
+        if publications_reussies:
+            print(f"\n🎉 SUCCÈS! Contenu publié sur: {', '.join(publications_reussies)}")
+        else:
+            print("\n📁 Contenu sauvegardé pour publication manuelle ultérieure")
+            self._save_offline_content(reviewed_content, image_path, preferences)
+    
+    async def _handle_scheduled_publication(self, reviewed_content, image_path, preferences, platforms):
+        """Gère la publication programmée (nouveau)"""
+        print(f"\n📅 Configuration de la publication programmée...")
+        
+        # Obtenir la date/heure de programmation
+        schedule_datetime = await self.get_schedule_datetime()
+        
+        # Sauvegarder le contenu reviewé pour le scheduler
+        content_file = self._save_reviewed_content_for_scheduling(reviewed_content, image_path, preferences)
+        
+        if not content_file:
+            print("❌ Erreur lors de la sauvegarde du contenu")
+            return
+        
+        # Programmer le post
+        try:
+            post_id = self.scheduler.schedule_post(
+                content_file_path=content_file,
+                schedule_datetime=schedule_datetime,
+                platforms=platforms
+            )
+            
+            print(f"\n🎉 CONTENU PROGRAMMÉ AVEC SUCCÈS!")
+            print(f"📅 Date/heure: {schedule_datetime.strftime('%d/%m/%Y à %H:%M')}")
+            print(f"🆔 ID du post: {post_id}")
+            
+            selected_platforms = [p for p, enabled in platforms.items() if enabled]
+            print(f"🌐 Plateformes: {', '.join(selected_platforms)}")
+            
+            if image_path:
+                print(f"🖼️ Image incluse: {os.path.basename(image_path)}")
+            
+            # Demander si l'utilisateur veut démarrer le scheduler
+            if not self.scheduler.is_running:
+                start_scheduler = input(f"\n🚀 Démarrer le scheduler automatique maintenant? (o/n): ").strip().lower()
+                
+                if start_scheduler in ['o', 'oui', 'y', 'yes']:
+                    self.scheduler.start_scheduler()
+                    print("✅ Scheduler démarré!")
+                    print("💡 Le système vérifiera automatiquement les posts à publier toutes les minutes.")
+                    print("💡 Gardez le script en cours d'exécution pour les publications automatiques.")
+                    
+                    # Maintenir le script actif
+                    try:
+                        print("\n⌛ Scheduler actif. Appuyez sur Ctrl+C pour arrêter...")
+                        while self.scheduler.is_running:
+                            await asyncio.sleep(1)
+                    except KeyboardInterrupt:
+                        self.scheduler.stop_scheduler()
+                        print("\n👋 Scheduler arrêté. Au revoir!")
+                else:
+                    print("📝 Contenu programmé. Utilisez 'python run_scheduler.py' pour démarrer le scheduler plus tard.")
+            
+        except Exception as e:
+            print(f"❌ Erreur lors de la programmation: {e}")
     
     def _save_offline_content(self, content, image_path, preferences):
         """Sauvegarde le contenu hors ligne pour utilisation ultérieure"""

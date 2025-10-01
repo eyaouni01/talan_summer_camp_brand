@@ -6,7 +6,7 @@ apis:
   google:
     name: "Google Generative AI"
     base_url: "https://generativelanguage.googleapis.com"
-    model: "gemini-1.5-flash"
+    model: "gemini-2.5-flash"
     required: true
     cost: "free"
     

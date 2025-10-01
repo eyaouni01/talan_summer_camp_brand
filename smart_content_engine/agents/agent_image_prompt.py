@@ -16,7 +16,7 @@ def clean_prompt_tokens(prompt):
 
 def generate_image_prompt(reviewed_content: str,preferences=None) -> str:
     print("📥 Reviewed content:", reviewed_content)
-    model = genai.GenerativeModel("gemini-1.5-flash")
+    model = genai.GenerativeModel("gemini-2.5-flash")
 
     instruction = f"""
 You are a prompt compressor. Based on the following text, generate a **very short and explicit visual image prompt** (max 15 words), in English, suitable for a professional LinkedIn image.

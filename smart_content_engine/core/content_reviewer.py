@@ -18,7 +18,7 @@ class ContentReviewer:
             raise ValueError("❌ GOOGLE_API_KEY manquant dans .env")
         
         genai.configure(api_key=api_key)
-        self.model = genai.GenerativeModel('gemini-1.5-flash')
+        self.model = genai.GenerativeModel('gemini-2.5-flash')
     
     async def review_business_content(self, content: str, preferences: Dict) -> Optional[str]:
         """

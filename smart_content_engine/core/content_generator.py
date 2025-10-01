@@ -19,7 +19,7 @@ class ContentGenerator:
             raise ValueError("❌ GOOGLE_API_KEY manquant dans .env")
         
         genai.configure(api_key=api_key)
-        self.model = genai.GenerativeModel('gemini-1.5-flash')
+        self.model = genai.GenerativeModel('gemini-2.5-flash')
     
     async def generate_business_content(self, preferences: Dict) -> Optional[str]:
         """
